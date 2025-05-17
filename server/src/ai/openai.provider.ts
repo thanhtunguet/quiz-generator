@@ -51,27 +51,38 @@ export class OpenAIProvider implements LlmProvider {
             
 Generate ${numberOfQuestions} ${difficulty}-level multiple-choice questions based on the provided text content.
 
-Follow these requirements:
-1. Each question must have 4 options (A, B, C, D)
-2. Only ONE option should be correct
-3. Include a brief explanation for the correct answer
-4. Return the quiz questions in valid JSON format with the following structure:
+CRITICAL REQUIREMENTS:
+1. Each question must have EXACTLY 4 options (A, B, C, D)
+2. The correctAnswer MUST BE EXACTLY ONE of the options provided in the options array
+3. Keep the questions and answers in the SAME LANGUAGE as the source document text
+4. Include a brief explanation for the correct answer in the same language as the question
+
+Format Requirements:
+- Return the quiz questions in valid JSON format with the following structure:
 [
   {
     "id": "1",
     "question": "What is...",
     "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": "Option A",
+    "correctAnswer": "Option A",  // MUST be exactly one of the options above
     "explanation": "This is correct because...",
     "difficulty": "${difficulty}"
   }
 ]
 
-${additionalInstructions}`,
+Validation Rules:
+1. The correctAnswer MUST be an exact match of one of the options
+2. Do not translate the content unless specifically requested
+3. Maintain consistent language throughout each question (question, options, explanation)
+4. Each option should be distinct and plausible
+
+${additionalInstructions}
+
+IMPORTANT: Double-check that each correctAnswer exactly matches one of its options before returning the response.`,
           },
           {
             role: 'user',
-            content: `Create a quiz based on this content: \n\n${truncatedContent}`,
+            content: `Create a quiz based on this content. Maintain the original language of the text: \n\n${truncatedContent}`,
           },
         ],
         temperature: 0.7,
