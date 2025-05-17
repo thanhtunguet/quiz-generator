@@ -6,10 +6,13 @@ const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'];
 const AI_PROVIDERS = [
   {
     id: 'gemini', name: 'Google', models: [
+      /// Gemini 2.0 family
       { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
       { id: "gemini-2.0-pro", name: "Gemini 2.0 Pro" },
+      /// Gemini 1.5 family
       { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
       { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+      /// Gemini 2.5 family
       { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
       { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
     ],
@@ -17,15 +20,27 @@ const AI_PROVIDERS = [
   {
     id: 'openai', name: 'OpenAI', models: [
       { id: 'qwen3-8b', name: 'Qwen3 8B' },
+      /// Legacy GPT 3.5 family
       { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+      /// GPT 4o family
       { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
       { id: 'gpt-4o', name: 'GPT-4o' },
+      /// GPT 4.1 family
+      { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano' },
+      { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
+      { id: 'gpt-4.1', name: 'GPT-4.1' },
     ]
   },
   {
     id: 'anthropic', name: 'Anthropic', models: [
       { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
       { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
+    ]
+  },
+  {
+    id: 'deepseek', name: 'DeepSeek', models: [
+      { id: 'deepseek-chat', name: 'DeepSeek Chat' },
+      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' },
     ]
   },
 ];

@@ -1,4 +1,9 @@
-export type LlmProviderType = "openai" | "gemini" | "anthropic";
+export enum LlmProviderType {
+  OPENAI = "openai",
+  ANTHROPIC = "anthropic",
+  GOOGLE = "google",
+  DEEPSEEK = "deepseek",
+}
 
 export interface LlmProviderOptions {
   model?: string;

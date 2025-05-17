@@ -11,7 +11,7 @@ import { OpenAI } from "openai";
 export class OpenAIProvider implements LlmProvider {
   private openai: OpenAI;
   private isInitialized = false;
-  readonly providerType: LlmProviderType = "openai";
+  readonly providerType: LlmProviderType = LlmProviderType.OPENAI;
 
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>("OPENAI_API_KEY");

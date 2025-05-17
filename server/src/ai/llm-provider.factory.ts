@@ -1,59 +1,48 @@
 import { Injectable } from "@nestjs/common";
 import { LlmProvider, LlmProviderType } from "./llm-provider.interface";
 import { OpenAIProvider } from "./openai.provider";
-import { GeminiProvider } from "./gemini.provider";
 import { AnthropicProvider } from "./anthropic.provider";
+import { GeminiProvider } from "./gemini.provider";
+import { DeepseekProvider } from "./deepseek.provider";
 
 @Injectable()
 export class LlmProviderFactory {
-  private providers: Map<LlmProviderType, LlmProvider> = new Map();
-
   constructor(
     private readonly openaiProvider: OpenAIProvider,
+    private readonly anthropicProvider: AnthropicProvider,
     private readonly geminiProvider: GeminiProvider,
-    private readonly anthropicProvider: AnthropicProvider
-  ) {
-    // Initialize providers map
-    this.providers.set("openai", openaiProvider);
-    this.providers.set("gemini", geminiProvider);
-    this.providers.set("anthropic", anthropicProvider);
+    private readonly deepseekProvider: DeepseekProvider
+  ) {}
+
+  getProvider(type: LlmProviderType): LlmProvider {
+    switch (type) {
+      case LlmProviderType.OPENAI:
+        return this.openaiProvider;
+      case LlmProviderType.ANTHROPIC:
+        return this.anthropicProvider;
+      case LlmProviderType.GOOGLE:
+        return this.geminiProvider;
+      case LlmProviderType.DEEPSEEK:
+        return this.deepseekProvider;
+      default:
+        throw new Error(`Unsupported provider type: ${type}`);
+    }
   }
 
-  /**
-   * Get a specific LLM provider by type
-   * @param type The type of provider to get
-   * @returns The requested provider or undefined if not found
-   */
-  getProvider(type: LlmProviderType): LlmProvider | undefined {
-    return this.providers.get(type);
-  }
+  async getFirstAvailableProvider(): Promise<LlmProvider | null> {
+    const providers = [
+      this.openaiProvider,
+      this.anthropicProvider,
+      this.geminiProvider,
+      this.deepseekProvider,
+    ];
 
-  /**
-   * Get the first available provider
-   * @returns The first available provider or undefined if none are available
-   */
-  async getFirstAvailableProvider(): Promise<LlmProvider | undefined> {
-    for (const [type, provider] of this.providers) {
+    for (const provider of providers) {
       if (await provider.isAvailable()) {
         return provider;
       }
     }
-    return undefined;
-  }
 
-  /**
-   * Get all available providers
-   * @returns Array of available providers
-   */
-  async getAvailableProviders(): Promise<LlmProvider[]> {
-    const availableProviders: LlmProvider[] = [];
-
-    for (const [_, provider] of this.providers) {
-      if (await provider.isAvailable()) {
-        availableProviders.push(provider);
-      }
-    }
-
-    return availableProviders;
+    return null;
   }
 }
