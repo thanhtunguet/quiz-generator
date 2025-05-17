@@ -4,15 +4,25 @@ const QuizDisplay = ({ questions }) => {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
+  const [validationMessage, setValidationMessage] = useState('');
 
   const handleAnswerSelect = (questionId, answer) => {
     setSelectedAnswers({
       ...selectedAnswers,
       [questionId]: answer
     });
+    // Clear validation message when user selects an answer
+    setValidationMessage('');
   };
 
   const checkAnswers = () => {
+    const unansweredQuestions = questions.filter(q => !selectedAnswers[q.id]);
+
+    if (unansweredQuestions.length > 0) {
+      setValidationMessage(`Please answer all ${unansweredQuestions.length} remaining question${unansweredQuestions.length > 1 ? 's' : ''} before checking answers.`);
+      return;
+    }
+
     let correct = 0;
     questions.forEach(q => {
       if (selectedAnswers[q.id] === q.correctAnswer) {
@@ -22,12 +32,14 @@ const QuizDisplay = ({ questions }) => {
 
     setScore(correct);
     setShowResults(true);
+    setValidationMessage('');
   };
 
   const resetQuiz = () => {
     setSelectedAnswers({});
     setShowResults(false);
     setScore(0);
+    setValidationMessage('');
   };
 
   return (
@@ -41,11 +53,20 @@ const QuizDisplay = ({ questions }) => {
         ) : null}
       </div>
 
+      {validationMessage && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700">
+          {validationMessage}
+        </div>
+      )}
+
       <div className="space-y-8">
         {questions.map((question, index) => (
           <div
             key={question.id}
-            className="bg-white rounded-lg shadow-md p-6 border border-gray-200"
+            className={`bg-white rounded-lg shadow-md p-6 border ${validationMessage && !selectedAnswers[question.id]
+                ? 'border-yellow-300'
+                : 'border-gray-200'
+              }`}
           >
             <h3 className="text-lg font-medium mb-4">
               {index + 1}. {question.question}
@@ -103,7 +124,7 @@ const QuizDisplay = ({ questions }) => {
         {!showResults ? (
           <button
             onClick={checkAnswers}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={Object.keys(selectedAnswers).length !== questions.length}
           >
             Check Answers
