@@ -5,12 +5,43 @@ import { ConfigService } from "@nestjs/config";
 import * as path from "path";
 import * as fs from "fs";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { join } from "path";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Create app with Express platform
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS
   app.use(cors());
+
+  // Serve static files from the client build directory
+  const clientBuildPath = path.join(__dirname, "..", "public");
+  console.log(clientBuildPath);
+  if (fs.existsSync(clientBuildPath)) {
+    app.useStaticAssets(clientBuildPath, {
+      index: false, // Don't serve index.html for directory requests
+    });
+
+    // Serve index.html for all routes that don't match API or static files
+    app.use((req, res, next) => {
+      if (
+        !req.path.startsWith("/api") && // Don't handle API routes
+        !req.path.startsWith("/uploads") && // Don't handle upload routes
+        !req.path.match(
+          /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/
+        ) // Don't handle static assets
+      ) {
+        res.sendFile(join(clientBuildPath, "index.html"));
+      } else {
+        next();
+      }
+    });
+  } else {
+    console.warn(
+      "Client build directory not found. Static file serving is disabled."
+    );
+  }
 
   // Swagger configuration
   const config = new DocumentBuilder()
