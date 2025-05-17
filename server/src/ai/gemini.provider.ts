@@ -17,7 +17,7 @@ export class GeminiProvider implements LlmProvider {
   private genAI: GoogleGenerativeAI;
   private model: GenerativeModel;
   private isInitialized = false;
-  readonly providerType: LlmProviderType = LlmProviderType.GOOGLE;
+  readonly providerType: LlmProviderType = LlmProviderType.GEMINI;
 
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>("GEMINI_API_KEY");

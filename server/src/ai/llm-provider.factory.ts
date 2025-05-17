@@ -20,7 +20,7 @@ export class LlmProviderFactory {
         return this.openaiProvider;
       case LlmProviderType.ANTHROPIC:
         return this.anthropicProvider;
-      case LlmProviderType.GOOGLE:
+      case LlmProviderType.GEMINI:
         return this.geminiProvider;
       case LlmProviderType.DEEPSEEK:
         return this.deepseekProvider;

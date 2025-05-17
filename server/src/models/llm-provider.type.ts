@@ -1,6 +1,6 @@
 export enum LlmProviderType {
   OPENAI = "openai",
   ANTHROPIC = "anthropic",
-  GOOGLE = "google",
+  GEMINI = "gemini",
   DEEPSEEK = "deepseek",
 }
