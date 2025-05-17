@@ -5,6 +5,16 @@ const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'];
 
 const AI_PROVIDERS = [
   {
+    id: 'gemini', name: 'Google', models: [
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+      { id: "gemini-2.0-pro", name: "Gemini 2.0 Pro" },
+      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
+      { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+    ],
+  },
+  {
     id: 'openai', name: 'OpenAI', models: [
       { id: 'qwen3-8b', name: 'Qwen3 8B' },
       { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
@@ -17,15 +27,6 @@ const AI_PROVIDERS = [
       { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
       { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
     ]
-  },
-  {
-    id: 'gemini', name: 'Google', models: [
-      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
-      { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
-      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
-    ],
   },
 ];
 
