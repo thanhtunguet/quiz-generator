@@ -21,9 +21,11 @@ RUN yarn build
 FROM node:alpine AS final
 WORKDIR /app
 
-COPY --from=be /src/dist /src/package.json src/yarn.lock /app/dist/
-RUN yarn install --production
+COPY --from=be /src/package.json /app/package.json
+COPY --from=be /src/yarn.lock /app/yarn.lock
+RUN yarn install --production --frozen-lockfile
 
+COPY --from=be /src/dist /app/dist/
 COPY --from=fe /src/dist /app/public/
 
 EXPOSE 3000
