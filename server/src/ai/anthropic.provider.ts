@@ -12,7 +12,7 @@ export class AnthropicProvider implements LlmProvider {
   private anthropic: Anthropic;
   private isInitialized = false;
   private readonly defaultModel = "claude-3-sonnet-20240229";
-  readonly providerType: LlmProviderType = "anthropic";
+  readonly providerType: LlmProviderType = LlmProviderType.ANTHROPIC;
 
   constructor(private configService: ConfigService) {
     const apiKey = this.configService.get<string>("ANTHROPIC_API_KEY");
