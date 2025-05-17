@@ -1,33 +1,27 @@
-FROM node:alpine AS fe
+FROM node:alpine AS build
 WORKDIR /src
 
+# Build the client
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
-
 COPY . .
-
 RUN yarn build
 
-FROM node:alpine AS be
-WORKDIR /src
+# Build the server
+RUN mkdir -p /src/server
+COPY server/package.json server/yarn.lock ./server/
+RUN yarn --cwd server install --frozen-lockfile
+RUN yarn --cwd server build
 
-COPY server/package.json server/yarn.lock ./
-RUN yarn install --frozen-lockfile
-
-COPY server/ .
-
-RUN yarn build
-
-FROM node:alpine AS final
+FROM node:alpine as final
 WORKDIR /app
 
-COPY --from=be /src/package.json /app/package.json
-COPY --from=be /src/yarn.lock /app/yarn.lock
-RUN yarn install --production --frozen-lockfile
-
-COPY --from=be /src/dist /app/dist/
-COPY --from=fe /src/dist /app/public/
+RUN mkdir -p /app/server
+COPY --from=build /src/server/package.json /src/server/yarn.lock /app/server/
+RUN yarn --cwd server install --frozen-lockfile
+COPY --from=build /src/server/dist /app/server/dist
+COPY --from=build /src/dist /app/server/public
 
 EXPOSE 3000
 
-CMD ["node", "dist/main.js"]
+CMD ["yarn", "--cwd", "server", "start:prod"]
