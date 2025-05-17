@@ -15,11 +15,11 @@ const QuizDisplay = ({ questions }) => {
   const checkAnswers = () => {
     let correct = 0;
     questions.forEach(q => {
-      if (selectedAnswers[q.id] === q.answer) {
+      if (selectedAnswers[q.id] === q.correctAnswer) {
         correct++;
       }
     });
-    
+
     setScore(correct);
     setShowResults(true);
   };
@@ -43,22 +43,22 @@ const QuizDisplay = ({ questions }) => {
 
       <div className="space-y-8">
         {questions.map((question, index) => (
-          <div 
-            key={question.id} 
+          <div
+            key={question.id}
             className="bg-white rounded-lg shadow-md p-6 border border-gray-200"
           >
             <h3 className="text-lg font-medium mb-4">
               {index + 1}. {question.question}
             </h3>
-            
+
             <div className="space-y-2">
               {question.options.map((option) => {
                 const isSelected = selectedAnswers[question.id] === option;
-                const isCorrect = showResults && option === question.answer;
-                const isWrong = showResults && isSelected && option !== question.answer;
-                
+                const isCorrect = showResults && option === question.correctAnswer;
+                const isWrong = showResults && isSelected && option !== question.correctAnswer;
+
                 let optionClass = "border rounded-md p-3 cursor-pointer transition-colors";
-                
+
                 if (showResults) {
                   if (isCorrect) {
                     optionClass += " bg-green-100 border-green-500";
@@ -68,14 +68,14 @@ const QuizDisplay = ({ questions }) => {
                     optionClass += " border-gray-200";
                   }
                 } else {
-                  optionClass += isSelected 
-                    ? " bg-blue-100 border-blue-500" 
+                  optionClass += isSelected
+                    ? " bg-blue-100 border-blue-500"
                     : " hover:bg-gray-50 border-gray-200";
                 }
 
                 return (
-                  <div 
-                    key={option} 
+                  <div
+                    key={option}
                     className={optionClass}
                     onClick={() => {
                       if (!showResults) {
@@ -84,7 +84,7 @@ const QuizDisplay = ({ questions }) => {
                     }}
                   >
                     {option}
-                    
+
                     {showResults && isCorrect && (
                       <span className="ml-2 text-green-600">✓</span>
                     )}
