@@ -11,6 +11,7 @@ import Anthropic from "@anthropic-ai/sdk";
 export class AnthropicProvider implements LlmProvider {
   private anthropic: Anthropic;
   private isInitialized = false;
+  private readonly defaultModel = "claude-3-sonnet-20240229";
   readonly providerType: LlmProviderType = "anthropic";
 
   constructor(private configService: ConfigService) {
@@ -87,9 +88,7 @@ Content to generate quiz from:
 ${truncatedContent}`;
 
       const message = await this.anthropic.messages.create({
-        model:
-          this.configService.get<string>("ANTHROPIC_MODEL") ||
-          "claude-3-sonnet-20240229",
+        model: options?.model || this.defaultModel,
         max_tokens: options?.maxTokens ?? 4000,
         temperature: options?.temperature ?? 0.7,
         system: systemPrompt,

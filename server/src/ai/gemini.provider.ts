@@ -25,7 +25,7 @@ export class GeminiProvider implements LlmProvider {
     if (apiKey) {
       this.genAI = new GoogleGenerativeAI(apiKey);
       this.model = this.genAI.getGenerativeModel({
-        model: this.configService.get<string>("GEMINI_MODEL") || "gemini-pro",
+        model: "gemini-1.5-flash",
       });
       this.isInitialized = true;
     } else {
@@ -48,6 +48,13 @@ export class GeminiProvider implements LlmProvider {
   ): Promise<any> {
     if (!this.isInitialized) {
       throw new Error("Gemini provider is not properly initialized");
+    }
+
+    // Update model if specified in options
+    if (options?.model) {
+      this.model = this.genAI.getGenerativeModel({
+        model: options.model,
+      });
     }
 
     // Truncate content if it's too long
