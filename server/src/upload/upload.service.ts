@@ -6,7 +6,12 @@ import * as crypto from "crypto";
 import { UploadResponse } from "../models/upload-response.interface";
 import * as mammoth from "mammoth";
 import * as pdfParse from "pdf-parse";
-import * as Express from "express";
+import { Express } from "express";
+import { Multer } from "multer";
+import { promisify } from "util";
+import { extractTextFromFile } from "../utils/file-extractor";
+
+const unlinkAsync = promisify(fs.unlink);
 
 @Injectable()
 export class UploadService {
@@ -213,5 +218,22 @@ export class UploadService {
       filename: fileMatch,
       mimeType,
     };
+  }
+
+  async processFile(file: Express.Multer.File): Promise<{ text: string }> {
+    try {
+      const text = await extractTextFromFile(file.path);
+
+      // Clean up the uploaded file
+      await unlinkAsync(file.path);
+
+      return { text };
+    } catch (error) {
+      // Clean up the uploaded file in case of error
+      if (file.path) {
+        await unlinkAsync(file.path).catch(console.error);
+      }
+      throw error;
+    }
   }
 }

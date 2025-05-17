@@ -15,6 +15,7 @@ import { UploadService } from "./upload.service";
 import { UploadResponse } from "../models/upload-response.interface";
 import { Response } from "express";
 import { ApiTags, ApiConsumes, ApiBody } from "@nestjs/swagger";
+import { Multer } from "multer";
 
 @ApiTags("Upload")
 @Controller("/api/upload")

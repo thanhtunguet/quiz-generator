@@ -1,19 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { LlmProvider } from './llm-provider.interface';
-import { QuizQuestion } from '../models/quiz-question.interface';
+import { Injectable, Inject } from "@nestjs/common";
+import { LlmProviderFactory } from "./llm-provider.factory";
+import { LlmProviderType } from "./llm-provider.interface";
+import { QuizQuestion } from "../models/quiz-question.interface";
 
 @Injectable()
 export class AiService {
-  constructor(
-    @Inject('LLM_PROVIDER') private llmProvider: LlmProvider,
-  ) {}
+  constructor(private readonly providerFactory: LlmProviderFactory) {}
 
   /**
    * Check if the AI service is properly configured and available
    * @returns Promise resolving to boolean indicating availability
    */
   async isAvailable(): Promise<boolean> {
-    return await this.llmProvider.isAvailable();
+    const provider = await this.providerFactory.getFirstAvailableProvider();
+    return provider ? await provider.isAvailable() : false;
   }
 
   /**
@@ -22,36 +22,37 @@ export class AiService {
    * @param numberOfQuestions Number of questions to generate
    * @param difficulty Difficulty level for the questions
    * @param additionalInstructions Additional instructions for the AI
+   * @param providerType Optional provider type to use
    * @returns Array of QuizQuestion objects
    */
   async generateQuiz(
     content: string,
     numberOfQuestions: number = 5,
-    difficulty: string = 'medium',
-    additionalInstructions: string = '',
+    difficulty: string = "medium",
+    additionalInstructions: string = "",
+    providerType?: LlmProviderType
   ): Promise<QuizQuestion[]> {
-    try {
-      // Check content length and give appropriate error if empty
-      if (!content || content.trim().length === 0) {
-        throw new Error('Cannot generate quiz from empty content');
-      }
+    // Get the specified provider or fall back to the first available one
+    const provider = providerType
+      ? this.providerFactory.getProvider(providerType)
+      : await this.providerFactory.getFirstAvailableProvider();
 
-      // Generate raw questions from LLM provider
-      const rawQuestions = await this.llmProvider.generateQuiz(
-        content,
-        numberOfQuestions,
-        difficulty,
-        additionalInstructions,
-      );
-
-      // Transform and validate the questions
-      const questions: QuizQuestion[] = this.processAndValidateQuestions(rawQuestions);
-
-      return questions;
-    } catch (error) {
-      console.error('Quiz generation error:', error);
-      throw new Error(`Failed to generate quiz: ${error.message}`);
+    if (!provider) {
+      throw new Error("No LLM provider is available");
     }
+
+    if (!(await provider.isAvailable())) {
+      throw new Error(`LLM provider ${provider.providerType} is not available`);
+    }
+
+    const questions = await provider.generateQuiz(
+      content,
+      numberOfQuestions,
+      difficulty,
+      additionalInstructions
+    );
+
+    return this.processAndValidateQuestions(questions);
   }
 
   /**
@@ -61,33 +62,35 @@ export class AiService {
    */
   private processAndValidateQuestions(rawQuestions: any[]): QuizQuestion[] {
     if (!Array.isArray(rawQuestions)) {
-      throw new Error('Expected an array of questions from AI');
+      throw new Error("Invalid response format: questions must be an array");
     }
 
     return rawQuestions.map((q, index) => {
-      // Ensure all required fields exist
-      if (!q.question || !q.options || !q.correctAnswer) {
+      // Validate required fields
+      if (!q.question || !Array.isArray(q.options) || !q.correctAnswer) {
         throw new Error(`Question ${index + 1} is missing required fields`);
       }
 
       // Ensure options is an array
       if (!Array.isArray(q.options)) {
-        throw new Error(`Options for question ${index + 1} should be an array`);
+        throw new Error(`Question ${index + 1} options must be an array`);
       }
 
-      // Ensure the correct answer is one of the options
+      // Validate that correct answer is among options
       if (!q.options.includes(q.correctAnswer)) {
-        throw new Error(`Correct answer for question ${index + 1} is not among the options`);
+        throw new Error(
+          `Question ${index + 1} correct answer is not among the options`
+        );
       }
 
       return {
-        id: q.id || `q${index + 1}`,
+        id: (index + 1).toString(),
         question: q.question,
         options: q.options,
         correctAnswer: q.correctAnswer,
-        explanation: q.explanation || 'No explanation provided.',
-        difficulty: q.difficulty || 'medium',
-        category: q.category || 'general',
+        explanation: q.explanation || "",
+        difficulty: q.difficulty || "medium",
+        category: q.category || "general",
       };
     });
   }
