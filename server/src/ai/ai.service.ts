@@ -75,16 +75,9 @@ export class AiService {
         throw new Error(`Options for question ${index + 1} should be an array`);
       }
 
-      // Ensure options array has exactly 4 items
-      if (q.options.length !== 4) {
-        throw new Error(`Question ${index + 1} must have exactly 4 options`);
-      }
-
-      // If correct answer is not in options, add it to options and remove a random option
+      // Ensure the correct answer is one of the options
       if (!q.options.includes(q.correctAnswer)) {
-        // Remove a random option (except the first one to maintain order)
-        const randomIndex = Math.floor(Math.random() * (q.options.length - 1)) + 1;
-        q.options[randomIndex] = q.correctAnswer;
+        throw new Error(`Correct answer for question ${index + 1} is not among the options`);
       }
 
       return {
