@@ -73,9 +73,10 @@ CRITICAL REQUIREMENTS:
 2. The correctAnswer MUST BE EXACTLY ONE of the options provided in the options array
 3. Keep the questions and answers in the SAME LANGUAGE as the source document text
 4. Include a brief explanation for the correct answer in the same language as the question
+5. Return ONLY a clean JSON string without any markdown formatting or code blocks
 
 Format Requirements:
-- Return the quiz questions in valid JSON format with the following structure:
+Return a valid JSON string with the following structure (DO NOT use markdown code blocks):
 {
   "questions": [
     {
@@ -100,10 +101,13 @@ Validation Rules:
 2. Do not translate the content unless specifically requested
 3. Maintain consistent language throughout each question (question, options, explanation)
 4. Each option should be distinct and plausible
+5. Return ONLY the raw JSON string, no markdown formatting or code blocks
 
 ${additionalInstructions}
 
-IMPORTANT: Double-check that each correctAnswer exactly matches one of its options before returning the response.
+IMPORTANT: 
+1. Double-check that each correctAnswer exactly matches one of its options before returning the response
+2. Return ONLY the raw JSON string without any markdown formatting or code blocks
 
 Content to generate quiz from:
 ${truncatedContent}`;
@@ -117,7 +121,11 @@ ${truncatedContent}`;
       });
 
       const response = await result.response;
-      const text = response.text();
+      const text = response
+        .text()
+        .trim()
+        .replace(/^```json\n/, "")
+        .replace(/\n```$/, "");
 
       // Parse the JSON response
       const jsonResponse = JSON.parse(text);
