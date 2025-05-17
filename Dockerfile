@@ -21,8 +21,8 @@ RUN yarn build
 FROM node:alpine AS final
 WORKDIR /app
 
-COPY --from=be /src/dist /src/package.json src/yarn.lock ./dist/
-RUN yarn install --frozen-lockfile --production
+COPY --from=be /src/dist /src/package.json src/yarn.lock /app/dist/
+RUN yarn install --production
 
 COPY --from=fe /src/dist /app/public/
 
