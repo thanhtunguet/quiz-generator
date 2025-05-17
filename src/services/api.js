@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001
  */
 export const uploadFile = async (formData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/upload`, {
+    const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
       body: formData,
       // Don't set Content-Type header when sending FormData
@@ -29,16 +29,25 @@ export const uploadFile = async (formData) => {
 /**
  * Generate a quiz from the provided text
  * @param {string} text - Text content to create questions from
+ * @param {Object} options - Quiz generation options
+ * @param {number} options.numberOfQuestions - Number of questions to generate
+ * @param {string} options.difficulty - Difficulty level (easy, medium, hard)
+ * @param {string} options.additionalInstructions - Additional instructions for quiz generation
  * @returns {Promise<Object>} Response with generated quiz questions
  */
-export const generateQuiz = async (text) => {
+export const generateQuiz = async (text, options = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/quiz/generate`, {
+    const response = await fetch(`${API_BASE_URL}/api/quiz/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({
+        documentText: text,
+        numberOfQuestions: options.numberOfQuestions || 5,
+        difficulty: options.difficulty || 'medium',
+        additionalInstructions: options.additionalInstructions || '',
+      }),
     });
 
     if (!response.ok) {

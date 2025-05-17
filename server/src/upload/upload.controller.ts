@@ -17,7 +17,7 @@ import { Response } from "express";
 import { ApiTags, ApiConsumes, ApiBody } from "@nestjs/swagger";
 
 @ApiTags("Upload")
-@Controller("upload")
+@Controller("/api/upload")
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 

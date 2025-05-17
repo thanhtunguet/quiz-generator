@@ -22,11 +22,10 @@ const TextPreview = ({ text, onTextChange }) => {
         <h2 className="text-xl font-semibold">Document Content</h2>
         <button
           onClick={handleEditToggle}
-          className={`px-4 py-1 rounded-md ${
-            isEditable 
-              ? 'bg-green-500 hover:bg-green-600' 
+          className={`px-4 py-1 rounded-md ${isEditable
+              ? 'bg-green-500 hover:bg-green-600'
               : 'bg-blue-500 hover:bg-blue-600'
-          } text-white`}
+            } text-white`}
         >
           {isEditable ? 'Save' : 'Edit'}
         </button>
@@ -48,7 +47,7 @@ const TextPreview = ({ text, onTextChange }) => {
           )}
         </div>
       )}
-      
+
       <div className="mt-4 text-sm text-gray-500">
         <p>You can edit the extracted text if needed before generating the quiz.</p>
       </div>

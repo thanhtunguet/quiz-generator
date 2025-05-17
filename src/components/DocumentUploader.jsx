@@ -10,14 +10,10 @@ const SUPPORTED_FILE_TYPES = {
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'];
 
 const DocumentUploader = ({ onTextExtracted, setIsLoading, setErrorMessage }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [difficulty, setDifficulty] = useState('medium');
-  const [additionalInstructions, setAdditionalInstructions] = useState('');
-  const [numberOfQuestions, setNumberOfQuestions] = useState(5);
 
   const validateFile = (file) => {
     if (!file) {
@@ -93,26 +89,7 @@ const DocumentUploader = ({ onTextExtracted, setIsLoading, setErrorMessage }) =>
       const response = await uploadFile(formData);
 
       if (response.success) {
-        // After successful upload, generate quiz with the extracted text
-        const quizResponse = await fetch('/api/quiz/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            documentText: response.content,
-            numberOfQuestions,
-            difficulty,
-            additionalInstructions: additionalInstructions.trim(),
-          }),
-        });
-
-        const quizData = await quizResponse.json();
-        if (quizData.success) {
-          onTextExtracted(response.content, quizData);
-        } else {
-          throw new Error(quizData.error || 'Failed to generate quiz');
-        }
+        onTextExtracted(response.content);
       } else {
         throw new Error(response.error || 'Error uploading file');
       }
@@ -168,72 +145,25 @@ const DocumentUploader = ({ onTextExtracted, setIsLoading, setErrorMessage }) =>
       </div>
 
       {selectedFile && (
-        <>
-          <div className="mb-4 p-4 bg-gray-100 rounded-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{selectedFile.name}</p>
-                <p className="text-sm text-gray-500">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedFile(null);
-                  setErrorMessage(null);
-                }}
-                className="text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
+        <div className="mb-4 p-4 bg-gray-100 rounded-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">{selectedFile.name}</p>
+              <p className="text-sm text-gray-500">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
             </div>
+            <button
+              onClick={() => {
+                setSelectedFile(null);
+                setErrorMessage(null);
+              }}
+              className="text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
           </div>
-
-          <div className="space-y-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Number of Questions
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={numberOfQuestions}
-                onChange={(e) => setNumberOfQuestions(Math.min(20, Math.max(1, parseInt(e.target.value) || 1)))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Difficulty Level
-              </label>
-              <select
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {DIFFICULTY_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Additional Instructions (Optional)
-              </label>
-              <textarea
-                value={additionalInstructions}
-                onChange={(e) => setAdditionalInstructions(e.target.value)}
-                placeholder="Enter any specific instructions for quiz generation..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-              />
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       <div className="flex justify-end">
@@ -245,7 +175,7 @@ const DocumentUploader = ({ onTextExtracted, setIsLoading, setErrorMessage }) =>
             : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
         >
-          Upload & Generate Quiz
+          Upload Document
         </button>
       </div>
     </div>

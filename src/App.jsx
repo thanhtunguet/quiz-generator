@@ -39,6 +39,7 @@ function App() {
               text={documentText}
               onQuizGenerated={(questions) => {
                 setQuizQuestions(questions);
+                setErrorMessage(null);
                 setActiveTab('quiz');
               }}
               setIsLoading={setIsLoading}
