@@ -13,12 +13,12 @@ COPY server/package.json server/yarn.lock ./server/
 RUN yarn --cwd server install --frozen-lockfile
 RUN yarn --cwd server build
 
-FROM node:alpine as final
+FROM node:alpine AS final
 WORKDIR /app
 
 RUN mkdir -p /app/server
 COPY --from=build /src/server/package.json /src/server/yarn.lock /app/server/
-RUN yarn --cwd server install --frozen-lockfile
+RUN yarn --cwd server install --frozen-lockfile --production
 COPY --from=build /src/server/dist /app/server/dist
 COPY --from=build /src/dist /app/server/public
 
