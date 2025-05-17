@@ -33,6 +33,8 @@ export const uploadFile = async (formData) => {
  * @param {number} options.numberOfQuestions - Number of questions to generate
  * @param {string} options.difficulty - Difficulty level (easy, medium, hard)
  * @param {string} options.additionalInstructions - Additional instructions for quiz generation
+ * @param {string} options.provider - AI provider to use (openai, anthropic, gemini)
+ * @param {string} options.model - Specific model to use with the provider
  * @returns {Promise<Object>} Response with generated quiz questions
  */
 export const generateQuiz = async (text, options = {}) => {
@@ -47,6 +49,8 @@ export const generateQuiz = async (text, options = {}) => {
         numberOfQuestions: options.numberOfQuestions || 5,
         difficulty: options.difficulty || 'medium',
         additionalInstructions: options.additionalInstructions || '',
+        provider: options.provider,
+        model: options.model,
       }),
     });
 

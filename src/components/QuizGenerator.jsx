@@ -3,10 +3,49 @@ import { generateQuiz } from '../services/api';
 
 const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'];
 
+const AI_PROVIDERS = [
+  {
+    id: 'openai', name: 'OpenAI', models: [
+      { id: 'qwen3-8b', name: 'Qwen3 8B' },
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+      { id: 'gpt-4o', name: 'GPT-4o' },
+    ]
+  },
+  {
+    id: 'anthropic', name: 'Anthropic', models: [
+      { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
+      { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
+    ]
+  },
+  {
+    id: 'gemini', name: 'Google', models: [
+      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
+      { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+    ],
+  },
+];
+
 const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage }) => {
   const [numberOfQuestions, setNumberOfQuestions] = useState(5);
   const [difficulty, setDifficulty] = useState('medium');
   const [additionalInstructions, setAdditionalInstructions] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState(AI_PROVIDERS[0]);
+  const [selectedModel, setSelectedModel] = useState(AI_PROVIDERS[0].models[0]);
+
+  const handleProviderChange = (providerId) => {
+    const provider = AI_PROVIDERS.find(p => p.id === providerId);
+    setSelectedProvider(provider);
+    setSelectedModel(provider.models[0]); // Reset to first model of selected provider
+  };
+
+  const handleModelChange = (modelId) => {
+    const model = selectedProvider.models.find(m => m.id === modelId);
+    setSelectedModel(model);
+  };
 
   const handleGenerateQuiz = async () => {
     if (!text || text.trim() === '') {
@@ -19,7 +58,9 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
       const response = await generateQuiz(text, {
         numberOfQuestions,
         difficulty,
-        additionalInstructions: additionalInstructions.trim()
+        additionalInstructions: additionalInstructions.trim(),
+        provider: selectedProvider.id,
+        model: selectedModel.id,
       });
 
       if (response.success && response.questions) {
@@ -39,6 +80,37 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
       <h2 className="text-xl font-semibold mb-4">Generate Quiz</h2>
 
       <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            AI Provider
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <select
+              value={selectedProvider.id}
+              onChange={(e) => handleProviderChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {AI_PROVIDERS.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedModel.id}
+              onChange={(e) => handleModelChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {selectedProvider.models.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Number of Questions

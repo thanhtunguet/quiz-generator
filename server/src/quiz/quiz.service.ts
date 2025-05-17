@@ -5,6 +5,7 @@ import { QuizQuestion } from "../models/quiz-question.interface";
 import { QuizResponse } from "../models/quiz-response.interface";
 import { UploadService } from "../upload/upload.service";
 import * as crypto from "crypto";
+import { LlmProviderType } from "../models/llm-provider.type";
 
 @Injectable()
 export class QuizService {
@@ -30,13 +31,17 @@ export class QuizService {
    * @param numberOfQuestions Number of questions to generate
    * @param difficulty Difficulty level for questions
    * @param additionalInstructions Additional instructions for the AI
+   * @param provider Optional provider type to use
+   * @param model Optional specific model to use with the provider
    * @returns Quiz response
    */
   async generateQuiz(
     documentText: string,
     numberOfQuestions: number = 5,
     difficulty: string = "medium",
-    additionalInstructions: string = ""
+    additionalInstructions: string = "",
+    provider?: LlmProviderType,
+    model?: string
   ): Promise<QuizResponse> {
     try {
       if (!documentText?.trim()) {
@@ -48,7 +53,9 @@ export class QuizService {
         documentText,
         numberOfQuestions,
         difficulty,
-        additionalInstructions
+        additionalInstructions,
+        provider,
+        { model }
       );
 
       // Store quiz in cache with unique ID

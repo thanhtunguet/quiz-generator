@@ -10,6 +10,7 @@ import {
 import { QuizService } from "./quiz.service";
 import { QuizResponse } from "../models/quiz-response.interface";
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
+import { LlmProviderType } from "../models/llm-provider.type";
 
 @ApiTags("Quiz")
 @Controller("/api/quiz")
@@ -28,7 +29,7 @@ export class QuizController {
       type: "object",
       required: ["text"],
       properties: {
-        text: {
+        documentText: {
           type: "string",
           description: "The text content of the document to generate quiz from",
         },
@@ -47,6 +48,15 @@ export class QuizController {
           type: "string",
           description: "Additional instructions for quiz generation",
         },
+        provider: {
+          type: "string",
+          description: "AI provider to use (openai, anthropic, gemini)",
+          enum: ["openai", "anthropic", "gemini"],
+        },
+        model: {
+          type: "string",
+          description: "Specific model to use with the provider",
+        },
       },
     },
   })
@@ -59,6 +69,8 @@ export class QuizController {
       numberOfQuestions?: number;
       difficulty?: string;
       additionalInstructions?: string;
+      provider?: string;
+      model?: string;
     }
   ): Promise<QuizResponse> {
     // Validate required fields
@@ -78,12 +90,24 @@ export class QuizController {
       );
     }
 
+    // Validate provider if specified
+    if (
+      body.provider &&
+      !["openai", "anthropic", "gemini"].includes(body.provider)
+    ) {
+      throw new BadRequestException(
+        "Provider must be one of: openai, anthropic, gemini"
+      );
+    }
+
     try {
       return await this.quizService.generateQuiz(
         body.documentText,
         numberOfQuestions,
         difficulty || "medium",
-        body.additionalInstructions || ""
+        body.additionalInstructions || "",
+        body.provider as LlmProviderType,
+        body.model
       );
     } catch (error) {
       console.error("Quiz generation error:", error);

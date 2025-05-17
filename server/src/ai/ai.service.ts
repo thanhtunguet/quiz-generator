@@ -2,6 +2,7 @@ import { Injectable, Inject } from "@nestjs/common";
 import { LlmProviderFactory } from "./llm-provider.factory";
 import { LlmProviderType } from "./llm-provider.interface";
 import { QuizQuestion } from "../models/quiz-question.interface";
+import { LlmProviderOptions } from "./llm-provider.interface";
 
 @Injectable()
 export class AiService {
@@ -23,6 +24,7 @@ export class AiService {
    * @param difficulty Difficulty level for the questions
    * @param additionalInstructions Additional instructions for the AI
    * @param providerType Optional provider type to use
+   * @param options Optional provider-specific options
    * @returns Array of QuizQuestion objects
    */
   async generateQuiz(
@@ -30,7 +32,8 @@ export class AiService {
     numberOfQuestions: number = 5,
     difficulty: string = "medium",
     additionalInstructions: string = "",
-    providerType?: LlmProviderType
+    providerType?: LlmProviderType,
+    options?: LlmProviderOptions
   ): Promise<QuizQuestion[]> {
     // Get the specified provider or fall back to the first available one
     const provider = providerType
@@ -49,7 +52,8 @@ export class AiService {
       content,
       numberOfQuestions,
       difficulty,
-      additionalInstructions
+      additionalInstructions,
+      options
     );
 
     return this.processAndValidateQuestions(questions);
