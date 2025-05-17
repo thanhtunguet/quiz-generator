@@ -1,0 +1,141 @@
+classDiagram
+    %% Frontend Classes
+    class App {
+        +state: AppState
+        +render() JSX
+    }
+    class AppState {
+        +isLoading: boolean
+        +errorMessage: string|null
+        +documentText: string|null
+        +quizQuestions: QuizQuestion[]|null
+        +setLoading(loading: boolean) void
+        +setError(message: string) void
+        +setDocumentText(text: string) void
+        +setQuizQuestions(questions: QuizQuestion[]) void
+    }
+    class DocumentUploader {
+        +files: File[]|null
+        +isUploading: boolean
+        +handleFileSelect(files: FileList) void
+        +uploadFiles() Promise<string>
+        +render() JSX
+    }
+    class TextPreview {
+        +text: string
+        +isEditable: boolean
+        +handleTextChange(newText: string) void
+        +render() JSX
+    }
+    class QuizGenerator {
+        +text: string
+        +isGenerating: boolean
+        +generateQuiz() Promise<QuizQuestion[]>
+        +render() JSX
+    }
+    class QuizDisplay {
+        +questions: QuizQuestion[]
+        +selectedAnswers: Map<number, string>
+        +handleAnswerSelect(questionId: number, answer: string) void
+        +checkAnswers() Results
+        +render() JSX
+    }
+    class QuizExport {
+        +questions: QuizQuestion[]
+        +exportAsJSON() void
+        +exportAsPDF() void
+        +render() JSX
+    }
+    class QuizQuestion {
+        +id: number
+        +question: string
+        +options: string[]
+        +answer: string
+    }
+
+    %% Backend Classes
+    class AppModule {
+        <<NestJS Module>>
+    }
+    class UploadController {
+        -uploadService: UploadService
+        +uploadFile(file: Express.Multer.File) Promise<UploadResponse>
+    }
+    class QuizController {
+        -quizService: QuizService
+        +generateQuiz(text: string) Promise<QuizResponse>
+    }
+    class UploadService {
+        -documentParser: DocumentParser
+        +processUpload(file: Express.Multer.File) Promise<string>
+        -detectFileType(file: Express.Multer.File) string
+    }
+    class DocumentParser {
+        +parseDocument(file: Express.Multer.File, fileType: string) Promise<string>
+        -parsePDF(file: Express.Multer.File) Promise<string>
+        -parseDOCX(file: Express.Multer.File) Promise<string>
+        -parsePPTX(file: Express.Multer.File) Promise<string>
+    }
+    class QuizService {
+        -aiService: AIService
+        -responseFormatter: ResponseFormatter
+        +generateQuiz(text: string) Promise<QuizQuestion[]>
+        -validateQuestions(questions: QuizQuestion[]) boolean
+    }
+    class AIService {
+        -provider: LLMProvider
+        +generateQuestions(text: string) Promise<string>
+        +setProvider(provider: LLMProvider) void
+    }
+    class LLMProvider {
+        <<interface>>
+        +generateContent(prompt: string) Promise<string>
+    }
+    class OpenAIProvider {
+        -apiKey: string
+        -model: string
+        +generateContent(prompt: string) Promise<string>
+    }
+    class ResponseFormatter {
+        +parseAIResponse(response: string) Promise<QuizQuestion[]>
+        -validateFormat(questions: any[]) boolean
+    }
+    class UploadResponse {
+        +success: boolean
+        +text: string
+        +message?: string
+    }
+    class QuizResponse {
+        +success: boolean
+        +questions: QuizQuestion[]|null
+        +message?: string
+    }
+
+    %% Relationships
+    App *-- AppState
+    App *-- DocumentUploader
+    App *-- TextPreview
+    App *-- QuizGenerator
+    App *-- QuizDisplay
+    App *-- QuizExport
+    QuizDisplay o-- QuizQuestion
+    QuizExport o-- QuizQuestion
+
+    AppModule *-- UploadController
+    AppModule *-- QuizController
+    AppModule *-- UploadService
+    AppModule *-- DocumentParser
+    AppModule *-- QuizService
+    AppModule *-- AIService
+    AppModule *-- ResponseFormatter
+
+    UploadController --> UploadService : uses
+    UploadService --> DocumentParser : uses
+    QuizController --> QuizService : uses
+    QuizService --> AIService : uses
+    QuizService --> ResponseFormatter : uses
+    AIService --> LLMProvider : uses
+    OpenAIProvider ..|> LLMProvider : implements
+
+    UploadController ..> UploadResponse : returns
+    QuizController ..> QuizResponse : returns

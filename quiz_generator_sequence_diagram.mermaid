@@ -1,0 +1,75 @@
+sequenceDiagram
+    participant User
+    participant FE as Frontend
+    participant UC as UploadController
+    participant US as UploadService
+    participant DP as DocumentParser
+    participant QC as QuizController
+    participant QS as QuizService
+    participant AI as AIService
+    participant OAI as OpenAIProvider
+    participant RF as ResponseFormatter
+    
+    %% Document Upload Flow
+    User->>+FE: Selects file
+    FE->>FE: Validates file type
+    User->>FE: Clicks upload
+    FE->>+UC: POST /upload (multipart/form-data)
+    UC->>+US: processUpload(file)
+    US->>US: detectFileType(file)
+    US->>+DP: parseDocument(file, fileType)
+    alt PDF File
+        DP->>DP: parsePDF(file)
+    else DOCX File
+        DP->>DP: parseDOCX(file)
+    else PPTX File
+        DP->>DP: parsePPTX(file)
+    end
+    DP-->>-US: extracted text
+    US-->>-UC: text content
+    UC-->>-FE: UploadResponse{success: true, text: content}
+    FE->>FE: Display extracted text
+    FE-->>-User: Show text preview
+    
+    %% Text Editing (Optional)
+    User->>+FE: Edit text (optional)
+    FE->>FE: Update text state
+    FE-->>-User: Show updated text
+    
+    %% Quiz Generation Flow
+    User->>+FE: Clicks "Generate Quiz"
+    FE->>FE: Set loading state
+    FE->>+QC: POST /generate-quiz {text: string}
+    QC->>+QS: generateQuiz(text)
+    QS->>+AI: generateQuestions(text)
+    AI->>+OAI: generateContent(prompt + text)
+    OAI->>OAI: Call OpenAI API
+    OAI-->>-AI: raw AI response
+    AI-->>-QS: formatted AI text
+    QS->>+RF: parseAIResponse(response)
+    RF->>RF: Parse JSON structure
+    RF->>RF: validateFormat(questions)
+    RF-->>-QS: QuizQuestion[]
+    QS->>QS: validateQuestions(questions)
+    QS-->>-QC: quiz questions
+    QC-->>-FE: QuizResponse{success: true, questions: [...]}
+    FE->>FE: Update state with questions
+    FE->>FE: Render quiz display
+    FE-->>-User: Show generated quiz
+    
+    %% Quiz Interaction
+    User->>+FE: Select answers
+    FE->>FE: Update selectedAnswers
+    FE-->>-User: Show selected answers
+    
+    %% Quiz Export
+    User->>+FE: Click "Export as JSON"
+    FE->>FE: Format quiz as JSON
+    FE->>FE: Trigger file download
+    FE-->>-User: Download JSON file
+    
+    User->>+FE: Click "Export as PDF"
+    FE->>FE: Format quiz as PDF
+    FE->>FE: Generate PDF document
+    FE->>FE: Trigger file download
+    FE-->>-User: Download PDF file
