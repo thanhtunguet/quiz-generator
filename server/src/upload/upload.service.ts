@@ -1,14 +1,12 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import * as fs from "fs";
-import * as path from "path";
 import * as crypto from "crypto";
-import { UploadResponse } from "../models/upload-response.interface";
+import * as fs from "fs";
 import * as mammoth from "mammoth";
+import * as path from "path";
 import * as pdfParse from "pdf-parse";
-import { Express } from "express";
-import { Multer } from "multer";
 import { promisify } from "util";
+import { UploadResponse } from "../models/upload-response.interface";
 import { extractTextFromFile } from "../utils/file-extractor";
 
 const unlinkAsync = promisify(fs.unlink);

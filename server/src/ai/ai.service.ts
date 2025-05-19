@@ -3,6 +3,7 @@ import { LlmProviderFactory } from "./llm-provider.factory";
 import { LlmProviderType } from "./llm-provider.interface";
 import { QuizQuestion } from "../models/quiz-question.interface";
 import { LlmProviderOptions } from "./llm-provider.interface";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @Injectable()
 export class AiService {
@@ -30,7 +31,7 @@ export class AiService {
   async generateQuiz(
     content: string,
     numberOfQuestions: number = 5,
-    difficulty: string = "medium",
+    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
     additionalInstructions: string = "",
     providerType?: LlmProviderType,
     options?: LlmProviderOptions
@@ -93,7 +94,7 @@ export class AiService {
         options: q.options,
         correctAnswer: q.correctAnswer,
         explanation: q.explanation || "",
-        difficulty: q.difficulty || "medium",
+        difficulty: q.difficulty || QuizDifficulty.MEDIUM,
         category: q.category || "general",
       };
     });

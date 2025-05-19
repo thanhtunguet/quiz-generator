@@ -1,21 +1,19 @@
 import {
-  Controller,
-  Post,
-  UseInterceptors,
-  UploadedFile,
-  Body,
-  Param,
-  Get,
-  Res,
   BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Res,
+  UploadedFile,
+  UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { Express } from "express";
-import { UploadService } from "./upload.service";
-import { UploadResponse } from "../models/upload-response.interface";
+import { ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import { Response } from "express";
-import { ApiTags, ApiConsumes, ApiBody } from "@nestjs/swagger";
-import { Multer } from "multer";
+import { UploadResponse } from "../models/upload-response.interface";
+import { UploadService } from "./upload.service";
 
 @ApiTags("Upload")
 @Controller("/api/upload")

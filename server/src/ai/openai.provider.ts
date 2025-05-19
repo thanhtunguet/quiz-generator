@@ -6,6 +6,7 @@ import {
   LlmProviderOptions,
 } from "./llm-provider.interface";
 import { OpenAI } from "openai";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @Injectable()
 export class OpenAIProvider implements LlmProvider {
@@ -36,7 +37,7 @@ export class OpenAIProvider implements LlmProvider {
   async generateQuiz(
     content: string,
     numberOfQuestions: number = 5,
-    difficulty: string = "medium",
+    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<any> {

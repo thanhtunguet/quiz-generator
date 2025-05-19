@@ -1,4 +1,4 @@
-import { QuizQuestion } from './quiz-question.interface';
+import { QuizQuestion } from "./quiz-question.interface";
 
 export interface QuizResponse {
   success: boolean;
