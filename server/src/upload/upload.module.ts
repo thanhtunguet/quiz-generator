@@ -1,9 +1,8 @@
 import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { MulterModule } from "@nestjs/platform-express";
 import { UploadController } from "./upload.controller";
 import { UploadService } from "./upload.service";
-import { MulterModule } from "@nestjs/platform-express";
-import { ConfigModule, ConfigService } from "@nestjs/config";
-import * as path from "path";
 
 @Module({
   imports: [

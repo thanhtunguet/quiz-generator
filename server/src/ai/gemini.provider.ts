@@ -11,6 +11,7 @@ import {
   HarmCategory,
   HarmBlockThreshold,
 } from "@google/generative-ai";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @Injectable()
 export class GeminiProvider implements LlmProvider {
@@ -42,7 +43,7 @@ export class GeminiProvider implements LlmProvider {
   async generateQuiz(
     content: string,
     numberOfQuestions: number = 5,
-    difficulty: string = "medium",
+    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<any> {

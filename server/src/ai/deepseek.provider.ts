@@ -7,6 +7,7 @@ import {
 } from "./llm-provider.interface";
 import { QuizQuestion } from "../models/quiz-question.interface";
 import axios from "axios";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @Injectable()
 export class DeepseekProvider implements LlmProvider {
@@ -37,7 +38,7 @@ export class DeepseekProvider implements LlmProvider {
   async generateQuiz(
     content: string,
     numberOfQuestions: number = 5,
-    difficulty: string = "medium",
+    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<QuizQuestion[]> {

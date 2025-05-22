@@ -6,6 +6,7 @@ import { QuizResponse } from "../models/quiz-response.interface";
 import { UploadService } from "../upload/upload.service";
 import * as crypto from "crypto";
 import { LlmProviderType } from "../models/llm-provider.type";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @Injectable()
 export class QuizService {
@@ -38,7 +39,7 @@ export class QuizService {
   async generateQuiz(
     documentText: string,
     numberOfQuestions: number = 5,
-    difficulty: string = "medium",
+    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
     additionalInstructions: string = "",
     provider?: LlmProviderType,
     model?: string

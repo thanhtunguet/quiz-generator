@@ -11,6 +11,7 @@ import { QuizService } from "./quiz.service";
 import { QuizResponse } from "../models/quiz-response.interface";
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { LlmProviderType } from "../models/llm-provider.type";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @ApiTags("Quiz")
 @Controller("/api/quiz")
@@ -42,7 +43,11 @@ export class QuizController {
         difficulty: {
           type: "string",
           description: "Difficulty level (easy, medium, hard)",
-          enum: ["easy", "medium", "hard"],
+          enum: [
+            QuizDifficulty.EASY,
+            QuizDifficulty.MEDIUM,
+            QuizDifficulty.HARD,
+          ],
         },
         additionalInstructions: {
           type: "string",
@@ -83,8 +88,16 @@ export class QuizController {
       ? Math.min(Math.max(1, body.numberOfQuestions), 20) // Limit between 1 and 20
       : 5;
 
-    const difficulty = body.difficulty?.toLowerCase();
-    if (difficulty && !["easy", "medium", "hard"].includes(difficulty)) {
+    const difficulty = body.difficulty?.toLowerCase() as QuizDifficulty;
+
+    if (
+      difficulty &&
+      ![
+        QuizDifficulty.EASY,
+        QuizDifficulty.MEDIUM,
+        QuizDifficulty.HARD,
+      ].includes(difficulty)
+    ) {
       throw new BadRequestException(
         "Difficulty must be one of: easy, medium, hard"
       );
@@ -104,7 +117,7 @@ export class QuizController {
       return await this.quizService.generateQuiz(
         body.documentText,
         numberOfQuestions,
-        difficulty || "medium",
+        difficulty || QuizDifficulty.MEDIUM,
         body.additionalInstructions || "",
         body.provider as LlmProviderType,
         body.model

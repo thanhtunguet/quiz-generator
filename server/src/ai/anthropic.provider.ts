@@ -6,6 +6,7 @@ import {
   LlmProviderOptions,
 } from "./llm-provider.interface";
 import Anthropic from "@anthropic-ai/sdk";
+import { QuizDifficulty } from "src/models/quiz-difficulty";
 
 @Injectable()
 export class AnthropicProvider implements LlmProvider {
@@ -36,7 +37,7 @@ export class AnthropicProvider implements LlmProvider {
   async generateQuiz(
     content: string,
     numberOfQuestions: number = 5,
-    difficulty: string = "medium",
+    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<any> {
