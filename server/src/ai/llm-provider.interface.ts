@@ -3,6 +3,7 @@ export enum LlmProviderType {
   ANTHROPIC = "anthropic",
   GEMINI = "gemini",
   DEEPSEEK = "deepseek",
+  GROK = "grok",
 }
 
 export interface LlmProviderOptions {

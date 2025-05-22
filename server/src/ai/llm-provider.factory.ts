@@ -4,6 +4,7 @@ import { OpenAIProvider } from "./openai.provider";
 import { AnthropicProvider } from "./anthropic.provider";
 import { GeminiProvider } from "./gemini.provider";
 import { DeepseekProvider } from "./deepseek.provider";
+import { GrokProvider } from "./grok.provider";
 
 @Injectable()
 export class LlmProviderFactory {
@@ -11,7 +12,8 @@ export class LlmProviderFactory {
     private readonly openaiProvider: OpenAIProvider,
     private readonly anthropicProvider: AnthropicProvider,
     private readonly geminiProvider: GeminiProvider,
-    private readonly deepseekProvider: DeepseekProvider
+    private readonly deepseekProvider: DeepseekProvider,
+    private readonly grokProvider: GrokProvider
   ) {}
 
   getProvider(type: LlmProviderType): LlmProvider {
@@ -24,6 +26,8 @@ export class LlmProviderFactory {
         return this.geminiProvider;
       case LlmProviderType.DEEPSEEK:
         return this.deepseekProvider;
+      case LlmProviderType.GROK:
+        return this.grokProvider;
       default:
         throw new Error(`Unsupported provider type: ${type}`);
     }
@@ -35,6 +39,7 @@ export class LlmProviderFactory {
       this.anthropicProvider,
       this.geminiProvider,
       this.deepseekProvider,
+      this.grokProvider,
     ];
 
     for (const provider of providers) {

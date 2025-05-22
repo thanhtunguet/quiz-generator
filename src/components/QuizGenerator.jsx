@@ -43,6 +43,13 @@ const AI_PROVIDERS = [
       { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner' },
     ]
   },
+  {
+    id: 'grok', name: 'Grok', models: [
+      { id: 'grok-1', name: 'Grok-1' },
+      { id: 'grok-1.5', name: 'Grok-1.5' },
+      { id: 'grok-2', name: 'Grok-2' },
+    ]
+  },
 ];
 
 const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage }) => {
