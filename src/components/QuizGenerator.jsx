@@ -53,7 +53,7 @@ const AI_PROVIDERS = [
 ];
 
 const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage }) => {
-  const [numberOfQuestions, setNumberOfQuestions] = useState(5);
+  const [numberOfQuestions, setNumberOfQuestions] = useState(10);
   const [difficulty, setDifficulty] = useState('medium');
   const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [selectedProvider, setSelectedProvider] = useState(AI_PROVIDERS[0]);
@@ -68,6 +68,39 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
   const handleModelChange = (modelId) => {
     const model = selectedProvider.models.find(m => m.id === modelId);
     setSelectedModel(model);
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    // Allow any numeric input while typing (including empty and partial values)
+    if (value === '' || (!isNaN(value) && value >= 0)) {
+      setNumberOfQuestions(value === '' ? '' : parseInt(value, 10));
+    }
+  };
+
+  const handleInputBlur = (e) => {
+    const value = e.target.value;
+    const numValue = parseInt(value, 10);
+    
+    // Validate and correct the value when user finishes editing
+    if (value === '' || isNaN(numValue) || numValue < 10) {
+      setNumberOfQuestions(10);
+    } else if (numValue > 100) {
+      setNumberOfQuestions(100);
+    }
+  };
+
+  const handleSliderChange = (e) => {
+    const numValue = parseInt(e.target.value, 10);
+    setNumberOfQuestions(numValue);
+  };
+
+  // Calculate progress percentage for slider styling
+  const getSliderProgress = () => {
+    const value = numberOfQuestions || 10;
+    const min = 10;
+    const max = 100;
+    return ((value - min) / (max - min)) * 100;
   };
 
   const handleGenerateQuiz = async () => {
@@ -138,20 +171,40 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Number of Questions
           </label>
-          <div className="flex items-center">
-            <input
-              type="range"
-              min="1"
-              max="20"
-              value={numberOfQuestions}
-              onChange={(e) => setNumberOfQuestions(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="ml-3 text-gray-700 font-medium">{numberOfQuestions}</span>
-          </div>
-          <div className="flex justify-between text-sm text-gray-500 mt-1">
-            <span>1</span>
-            <span>20</span>
+          <div className="space-y-3">
+            {/* Number Input Field */}
+            <div className="flex items-center space-x-3">
+              <input
+                type="number"
+                min="10"
+                max="100"
+                value={numberOfQuestions}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                placeholder="10"
+              />
+              <span className="text-sm text-gray-600">questions (10-100)</span>
+            </div>
+            
+            {/* Slider */}
+            <div className="flex items-center">
+              <input
+                type="range"
+                min="10"
+                max="100"
+                value={numberOfQuestions || 10}
+                onChange={handleSliderChange}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  '--progress': `${getSliderProgress()}%`
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>10</span>
+              <span>100</span>
+            </div>
           </div>
         </div>
 
