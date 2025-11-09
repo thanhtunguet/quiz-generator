@@ -12,6 +12,7 @@ import {
   HarmBlockThreshold,
 } from "@google/generative-ai";
 import { QuizDifficulty } from "src/models/quiz-difficulty";
+import { MarkdownQuizParser } from "../utils/markdown-quiz-parser";
 
 @Injectable()
 export class GeminiProvider implements LlmProvider {
@@ -64,60 +65,73 @@ export class GeminiProvider implements LlmProvider {
         ? content.substring(0, 20000) + "...(truncated)"
         : content;
 
-    // Handle difficulty distribution (simplified for now)
+    // Handle difficulty distribution
+    let distribution: { easy: number; medium: number; hard: number };
     let difficultyText = "mixed difficulty";
+    let difficultyInstruction = "";
+    
     if (typeof difficultyDistribution === 'string') {
+      // Backward compatibility: convert single difficulty to 100% of that level
       difficultyText = difficultyDistribution;
+      distribution = {
+        easy: difficultyDistribution === 'easy' ? 100 : 0,
+        medium: difficultyDistribution === 'medium' ? 100 : 0,
+        hard: difficultyDistribution === 'hard' ? 100 : 0,
+      };
+    } else if (difficultyDistribution) {
+      distribution = difficultyDistribution;
+    } else {
+      // Default distribution
+      distribution = { easy: 40, medium: 30, hard: 30 };
+    }
+
+    // Calculate approximate number of questions for each difficulty
+    const easyCount = Math.round((numberOfQuestions * distribution.easy) / 100);
+    const mediumCount = Math.round((numberOfQuestions * distribution.medium) / 100);
+    const hardCount = numberOfQuestions - easyCount - mediumCount; // Ensure total adds up
+
+    // Create difficulty instruction
+    if (easyCount > 0 || mediumCount > 0 || hardCount > 0) {
+      const parts = [];
+      if (easyCount > 0) parts.push(`${easyCount} easy questions`);
+      if (mediumCount > 0) parts.push(`${mediumCount} medium questions`);
+      if (hardCount > 0) parts.push(`${hardCount} hard questions`);
+      difficultyInstruction = `Create exactly ${parts.join(', ')}.`;
+    } else {
+      difficultyInstruction = `Create ${numberOfQuestions} medium-level questions.`;
     }
 
     try {
-      const prompt = `You are an expert quiz creator who creates high-quality multiple-choice questions based on provided content.
-            
-Generate ${numberOfQuestions} ${difficultyText}-level multiple-choice questions based on the provided text content.
+      const prompt = `You are an expert quiz creator. Create ${numberOfQuestions} ${difficultyText}-level multiple-choice questions.
 
-CRITICAL REQUIREMENTS:
-1. Each question must have EXACTLY 4 options (A, B, C, D)
-2. The correctAnswer MUST BE EXACTLY ONE of the options provided in the options array
-3. Keep the questions and answers in the SAME LANGUAGE as the source document text
-4. Include a brief explanation for the correct answer in the same language as the question
-5. Return ONLY a clean JSON string without any markdown formatting or code blocks
+DIFFICULTY DISTRIBUTION:
+${difficultyInstruction || `Create ${numberOfQuestions} ${difficultyText}-level questions.`}
 
-FORMAT REQUIREMENTS:
-You MUST respond with ONLY valid JSON. NO markdown, NO code blocks, NO comments.
+DIFFICULTY DEFINITIONS:
+- Easy: Basic recall, simple facts, definitions
+- Medium: Application, analysis, understanding relationships  
+- Hard: Synthesis, evaluation, complex analysis
 
-Exact JSON structure:
-{
-  "questions": [
-    {
-      "id": "1",
-      "question": "Your question here?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Option A",
-      "explanation": "Brief explanation here",
-      "difficulty": "${difficultyText}"
-    }
-  ],
-  "metadata": {
-    "title": "Quiz Title",
-    "description": "Quiz Description",
-    "difficulty": "${difficultyText}",
-    "numberOfQuestions": ${numberOfQuestions}
-  }
-}
+FORMAT: Respond with ONLY a markdown table. No other text, explanations, or formatting.
 
-VALIDATION RULES:
-1. correctAnswer MUST exactly match one of the options (case sensitive)
-2. Use same language as source content
-3. NO trailing commas in JSON
-4. All strings must be properly escaped
-5. Start your response with { and end with }
+Required table structure:
+| Question | Option A | Option B | Option C | Option D | Correct Answer | Explanation | Difficulty |
+|----------|----------|----------|----------|----------|----------------|-------------|------------|
+| Your question here? | First option | Second option | Third option | Fourth option | First option | Brief explanation | easy |
 
-${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
+REQUIREMENTS:
+1. EXACTLY 4 options per question
+2. Correct Answer must EXACTLY match one of the options (word-for-word)
+3. Keep same language as source content
+4. Brief explanations in same language
+5. Difficulty must be: easy, medium, or hard
+6. NO extra text outside the table
+7. Start response with table header
+
+${additionalInstructions ? `\nAdditional instructions: ${additionalInstructions}` : ''}
 
 SOURCE CONTENT:
-${truncatedContent}
-
-RESPOND WITH ONLY THE JSON OBJECT (no other text):`;
+${truncatedContent}`;
 
       const result = await this.model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -128,64 +142,32 @@ RESPOND WITH ONLY THE JSON OBJECT (no other text):`;
       });
 
       const response = await result.response;
-      let text = response.text().trim();
+      let markdownText = response.text().trim();
 
-      // Clean up common formatting issues
-      text = text
-        .replace(/^```json\s*/i, "")
-        .replace(/\s*```$/i, "")
+      // Clean up markdown formatting issues
+      markdownText = markdownText
+        .replace(/^```markdown\s*/i, "")
         .replace(/^```\s*/i, "")
-        .replace(/^\s*json\s*/i, "")
+        .replace(/\s*```$/i, "")
         .trim();
 
-      // Find JSON object boundaries
-      const firstBrace = text.indexOf('{');
-      const lastBrace = text.lastIndexOf('}');
-      
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        text = text.substring(firstBrace, lastBrace + 1);
-      }
-
-      // Remove comments that might cause parsing issues
-      text = text.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
-
-      let jsonResponse;
+      // Parse the markdown table
       try {
-        jsonResponse = JSON.parse(text);
+        const questions = MarkdownQuizParser.parseQuizTable(markdownText);
+        
+        if (questions.length === 0) {
+          throw new Error("No valid questions found in the response");
+        }
+        
+        console.log(`Gemini provider successfully parsed ${questions.length} questions`);
+        return questions;
+        
       } catch (parseError) {
-        console.error("Gemini JSON Parse Error:", parseError.message);
+        console.error("Gemini Markdown Parse Error:", parseError.message);
         console.error("Raw response text:", response.text());
-        console.error("Cleaned text:", text);
-        throw new Error(`Failed to parse Gemini response as JSON: ${parseError.message}`);
+        console.error("Cleaned markdown:", markdownText);
+        throw new Error(`Failed to parse Gemini markdown response: ${parseError.message}`);
       }
-
-      // Validate the response structure
-      if (!jsonResponse.questions || !Array.isArray(jsonResponse.questions)) {
-        throw new Error(
-          "Invalid response format: missing or invalid questions array"
-        );
-      }
-
-      if (!jsonResponse.metadata || typeof jsonResponse.metadata !== "object") {
-        throw new Error("Invalid response format: missing or invalid metadata");
-      }
-
-      // Validate each question
-      jsonResponse.questions.forEach((q: any, index: number) => {
-        if (!q.question || !Array.isArray(q.options) || !q.correctAnswer) {
-          throw new Error(`Question ${index + 1} is missing required fields`);
-        }
-        if (q.options.length !== 4) {
-          throw new Error(`Question ${index + 1} must have exactly 4 options`);
-        }
-        if (!q.options.includes(q.correctAnswer)) {
-          throw new Error(
-            `Question ${index + 1} correct answer is not among the options`
-          );
-        }
-      });
-
-      return jsonResponse.questions;
     } catch (error) {
       console.error("Gemini API error:", error);
       throw new Error(`Failed to generate quiz: ${error.message}`);

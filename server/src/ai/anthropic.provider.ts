@@ -7,6 +7,7 @@ import {
 } from "./llm-provider.interface";
 import Anthropic from "@anthropic-ai/sdk";
 import { QuizDifficulty } from "src/models/quiz-difficulty";
+import { MarkdownQuizParser } from "../utils/markdown-quiz-parser";
 
 @Injectable()
 export class AnthropicProvider implements LlmProvider {
