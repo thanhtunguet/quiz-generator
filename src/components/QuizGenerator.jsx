@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { generateQuiz } from '../services/api';
 
-const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'];
 
 const AI_PROVIDERS = [
   {
@@ -54,7 +53,11 @@ const AI_PROVIDERS = [
 
 const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage }) => {
   const [numberOfQuestions, setNumberOfQuestions] = useState(10);
-  const [difficulty, setDifficulty] = useState('medium');
+  const [difficultyDistribution, setDifficultyDistribution] = useState({
+    easy: 40,
+    medium: 30,
+    hard: 30
+  });
   const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [selectedProvider, setSelectedProvider] = useState(AI_PROVIDERS[0]);
   const [selectedModel, setSelectedModel] = useState(AI_PROVIDERS[0].models[0]);
@@ -103,6 +106,45 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
     return ((value - min) / (max - min)) * 100;
   };
 
+  // Handle difficulty percentage changes
+  const handleDifficultyChange = (level, value) => {
+    const numValue = parseInt(value, 10);
+    if (isNaN(numValue) || numValue < 0 || numValue > 100) return;
+
+    setDifficultyDistribution(prev => {
+      const newDistribution = { ...prev, [level]: numValue };
+      
+      // Auto-adjust other values to maintain 100% total
+      const total = Object.values(newDistribution).reduce((sum, val) => sum + val, 0);
+      if (total !== 100) {
+        const otherLevels = Object.keys(newDistribution).filter(key => key !== level);
+        const remaining = 100 - numValue;
+        const otherTotal = otherLevels.reduce((sum, key) => sum + prev[key], 0);
+        
+        if (otherTotal > 0) {
+          otherLevels.forEach(key => {
+            newDistribution[key] = Math.round((prev[key] / otherTotal) * remaining);
+          });
+        } else {
+          // If other values are 0, distribute evenly
+          const perLevel = Math.floor(remaining / otherLevels.length);
+          otherLevels.forEach((key, index) => {
+            newDistribution[key] = index === otherLevels.length - 1 
+              ? remaining - (perLevel * (otherLevels.length - 1))
+              : perLevel;
+          });
+        }
+      }
+      
+      return newDistribution;
+    });
+  };
+
+  // Get total percentage (should always be 100 with auto-adjustment)
+  const getTotalPercentage = () => {
+    return Object.values(difficultyDistribution).reduce((sum, val) => sum + val, 0);
+  };
+
   const handleGenerateQuiz = async () => {
     if (!text || text.trim() === '') {
       setErrorMessage('Please provide some text to generate questions from.');
@@ -113,7 +155,7 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
       setIsLoading(true);
       const response = await generateQuiz(text, {
         numberOfQuestions,
-        difficulty,
+        difficultyDistribution,
         additionalInstructions: additionalInstructions.trim(),
         provider: selectedProvider.id,
         model: selectedModel.id,
@@ -209,20 +251,107 @@ const QuizGenerator = ({ text, onQuizGenerated, setIsLoading, setErrorMessage })
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Difficulty Level
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Difficulty Distribution
           </label>
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {DIFFICULTY_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-4">
+            {/* Easy Questions */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-green-800">Easy Questions</span>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={difficultyDistribution.easy}
+                    onChange={(e) => handleDifficultyChange('easy', e.target.value)}
+                    className="w-16 px-2 py-1 text-sm border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-center"
+                  />
+                  <span className="text-sm text-green-700">%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={difficultyDistribution.easy}
+                onChange={(e) => handleDifficultyChange('easy', e.target.value)}
+                className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer slider-green"
+                style={{
+                  '--progress': `${difficultyDistribution.easy}%`,
+                  '--color': '#22c55e'
+                }}
+              />
+            </div>
+
+            {/* Medium Questions */}
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-yellow-800">Medium Questions</span>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={difficultyDistribution.medium}
+                    onChange={(e) => handleDifficultyChange('medium', e.target.value)}
+                    className="w-16 px-2 py-1 text-sm border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 text-center"
+                  />
+                  <span className="text-sm text-yellow-700">%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={difficultyDistribution.medium}
+                onChange={(e) => handleDifficultyChange('medium', e.target.value)}
+                className="w-full h-2 bg-yellow-200 rounded-lg appearance-none cursor-pointer slider-yellow"
+                style={{
+                  '--progress': `${difficultyDistribution.medium}%`,
+                  '--color': '#eab308'
+                }}
+              />
+            </div>
+
+            {/* Hard Questions */}
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-red-800">Hard Questions</span>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={difficultyDistribution.hard}
+                    onChange={(e) => handleDifficultyChange('hard', e.target.value)}
+                    className="w-16 px-2 py-1 text-sm border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-center"
+                  />
+                  <span className="text-sm text-red-700">%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={difficultyDistribution.hard}
+                onChange={(e) => handleDifficultyChange('hard', e.target.value)}
+                className="w-full h-2 bg-red-200 rounded-lg appearance-none cursor-pointer slider-red"
+                style={{
+                  '--progress': `${difficultyDistribution.hard}%`,
+                  '--color': '#ef4444'
+                }}
+              />
+            </div>
+
+            {/* Total indicator */}
+            <div className="text-center">
+              <span className={`text-sm font-medium ${getTotalPercentage() === 100 ? 'text-green-600' : 'text-red-600'}`}>
+                Total: {getTotalPercentage()}%
+              </span>
+            </div>
+          </div>
         </div>
 
         <div>

@@ -22,7 +22,7 @@ export class AiService {
    * Generate a quiz based on the provided content
    * @param content Document content to base the quiz on
    * @param numberOfQuestions Number of questions to generate
-   * @param difficulty Difficulty level for the questions
+   * @param difficultyDistribution Difficulty distribution for the questions
    * @param additionalInstructions Additional instructions for the AI
    * @param providerType Optional provider type to use
    * @param options Optional provider-specific options
@@ -30,8 +30,8 @@ export class AiService {
    */
   async generateQuiz(
     content: string,
-    numberOfQuestions: number = 5,
-    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
+    numberOfQuestions: number = 10,
+    difficultyDistribution: { easy: number; medium: number; hard: number } = { easy: 40, medium: 30, hard: 30 },
     additionalInstructions: string = "",
     providerType?: LlmProviderType,
     options?: LlmProviderOptions
@@ -52,7 +52,7 @@ export class AiService {
     const questions = await provider.generateQuiz(
       content,
       numberOfQuestions,
-      difficulty,
+      difficultyDistribution,
       additionalInstructions,
       options
     );

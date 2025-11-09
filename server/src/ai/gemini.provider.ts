@@ -42,8 +42,8 @@ export class GeminiProvider implements LlmProvider {
 
   async generateQuiz(
     content: string,
-    numberOfQuestions: number = 5,
-    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
+    numberOfQuestions: number = 10,
+    difficultyDistribution?: { easy: number; medium: number; hard: number } | string,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<any> {
@@ -64,10 +64,16 @@ export class GeminiProvider implements LlmProvider {
         ? content.substring(0, 20000) + "...(truncated)"
         : content;
 
+    // Handle difficulty distribution (simplified for now)
+    let difficultyText = "mixed difficulty";
+    if (typeof difficultyDistribution === 'string') {
+      difficultyText = difficultyDistribution;
+    }
+
     try {
       const prompt = `You are an expert quiz creator who creates high-quality multiple-choice questions based on provided content.
             
-Generate ${numberOfQuestions} ${difficulty}-level multiple-choice questions based on the provided text content.
+Generate ${numberOfQuestions} ${difficultyText}-level multiple-choice questions based on the provided text content.
 
 CRITICAL REQUIREMENTS:
 1. Each question must have EXACTLY 4 options (A, B, C, D)
@@ -76,42 +82,42 @@ CRITICAL REQUIREMENTS:
 4. Include a brief explanation for the correct answer in the same language as the question
 5. Return ONLY a clean JSON string without any markdown formatting or code blocks
 
-Format Requirements:
-Return a valid JSON string with the following structure (DO NOT use markdown code blocks):
+FORMAT REQUIREMENTS:
+You MUST respond with ONLY valid JSON. NO markdown, NO code blocks, NO comments.
+
+Exact JSON structure:
 {
   "questions": [
     {
       "id": "1",
-      "question": "What is...",
+      "question": "Your question here?",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Option A",  // MUST be exactly one of the options above
-      "explanation": "This is correct because...",
-      "difficulty": "${difficulty}"
+      "correctAnswer": "Option A",
+      "explanation": "Brief explanation here",
+      "difficulty": "${difficultyText}"
     }
   ],
   "metadata": {
     "title": "Quiz Title",
     "description": "Quiz Description",
-    "difficulty": "${difficulty}",
+    "difficulty": "${difficultyText}",
     "numberOfQuestions": ${numberOfQuestions}
   }
 }
 
-Validation Rules:
-1. The correctAnswer MUST be an exact match of one of the options
-2. Do not translate the content unless specifically requested
-3. Maintain consistent language throughout each question (question, options, explanation)
-4. Each option should be distinct and plausible
-5. Return ONLY the raw JSON string, no markdown formatting or code blocks
+VALIDATION RULES:
+1. correctAnswer MUST exactly match one of the options (case sensitive)
+2. Use same language as source content
+3. NO trailing commas in JSON
+4. All strings must be properly escaped
+5. Start your response with { and end with }
 
-${additionalInstructions}
+${additionalInstructions ? `Additional instructions: ${additionalInstructions}` : ''}
 
-IMPORTANT: 
-1. Double-check that each correctAnswer exactly matches one of its options before returning the response
-2. Return ONLY the raw JSON string without any markdown formatting or code blocks
+SOURCE CONTENT:
+${truncatedContent}
 
-Content to generate quiz from:
-${truncatedContent}`;
+RESPOND WITH ONLY THE JSON OBJECT (no other text):`;
 
       const result = await this.model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -122,14 +128,36 @@ ${truncatedContent}`;
       });
 
       const response = await result.response;
-      const text = response
-        .text()
-        .trim()
-        .replace(/^```json\n/, "")
-        .replace(/\n```$/, "");
+      let text = response.text().trim();
 
-      // Parse the JSON response
-      const jsonResponse = JSON.parse(text);
+      // Clean up common formatting issues
+      text = text
+        .replace(/^```json\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/^\s*json\s*/i, "")
+        .trim();
+
+      // Find JSON object boundaries
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        text = text.substring(firstBrace, lastBrace + 1);
+      }
+
+      // Remove comments that might cause parsing issues
+      text = text.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+      let jsonResponse;
+      try {
+        jsonResponse = JSON.parse(text);
+      } catch (parseError) {
+        console.error("Gemini JSON Parse Error:", parseError.message);
+        console.error("Raw response text:", response.text());
+        console.error("Cleaned text:", text);
+        throw new Error(`Failed to parse Gemini response as JSON: ${parseError.message}`);
+      }
 
       // Validate the response structure
       if (!jsonResponse.questions || !Array.isArray(jsonResponse.questions)) {

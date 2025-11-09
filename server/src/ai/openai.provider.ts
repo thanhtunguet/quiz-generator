@@ -36,8 +36,8 @@ export class OpenAIProvider implements LlmProvider {
 
   async generateQuiz(
     content: string,
-    numberOfQuestions: number = 5,
-    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
+    numberOfQuestions: number = 10,
+    difficultyDistribution?: { easy: number; medium: number; hard: number } | string,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<any> {
@@ -51,6 +51,39 @@ export class OpenAIProvider implements LlmProvider {
         ? content.substring(0, 20000) + "...(truncated)"
         : content;
 
+    // Handle difficulty distribution or convert single difficulty to distribution
+    let distribution: { easy: number; medium: number; hard: number };
+    if (typeof difficultyDistribution === 'string') {
+      // Backward compatibility: convert single difficulty to 100% of that level
+      distribution = {
+        easy: difficultyDistribution === 'easy' ? 100 : 0,
+        medium: difficultyDistribution === 'medium' ? 100 : 0,
+        hard: difficultyDistribution === 'hard' ? 100 : 0,
+      };
+    } else if (difficultyDistribution) {
+      distribution = difficultyDistribution;
+    } else {
+      // Default distribution
+      distribution = { easy: 40, medium: 30, hard: 30 };
+    }
+
+    // Calculate approximate number of questions for each difficulty
+    const easyCount = Math.round((numberOfQuestions * distribution.easy) / 100);
+    const mediumCount = Math.round((numberOfQuestions * distribution.medium) / 100);
+    const hardCount = numberOfQuestions - easyCount - mediumCount; // Ensure total adds up
+
+    // Create difficulty instruction
+    let difficultyInstruction = "";
+    if (easyCount > 0 || mediumCount > 0 || hardCount > 0) {
+      const parts = [];
+      if (easyCount > 0) parts.push(`${easyCount} easy questions`);
+      if (mediumCount > 0) parts.push(`${mediumCount} medium questions`);
+      if (hardCount > 0) parts.push(`${hardCount} hard questions`);
+      difficultyInstruction = `Create exactly ${parts.join(', ')}.`;
+    } else {
+      difficultyInstruction = `Create ${numberOfQuestions} medium-level questions.`;
+    }
+
     try {
       const response = await this.openai.chat.completions.create({
         model: options?.model || "gpt-4-turbo-preview",
@@ -59,13 +92,22 @@ export class OpenAIProvider implements LlmProvider {
             role: "system",
             content: `You are an expert quiz creator who creates high-quality multiple-choice questions based on provided content.
             
-Generate ${numberOfQuestions} ${difficulty}-level multiple-choice questions based on the provided text content.
+Generate ${numberOfQuestions} multiple-choice questions based on the provided text content.
+
+DIFFICULTY DISTRIBUTION REQUIREMENTS:
+${difficultyInstruction}
+
+DIFFICULTY LEVEL DEFINITIONS:
+- Easy: Basic recall, simple facts, definitions (straightforward questions about main concepts)
+- Medium: Application, analysis, understanding relationships (questions requiring some interpretation)
+- Hard: Synthesis, evaluation, complex analysis (questions requiring critical thinking and deep understanding)
 
 CRITICAL REQUIREMENTS:
 1. Each question must have EXACTLY 4 options (A, B, C, D)
 2. The correctAnswer MUST BE EXACTLY ONE of the options provided in the options array
 3. Keep the questions and answers in the SAME LANGUAGE as the source document text
 4. Include a brief explanation for the correct answer in the same language as the question
+5. STRICTLY FOLLOW the difficulty distribution specified above
 
 Format Requirements:
 - Return the quiz questions in valid JSON format with the following structure:
@@ -75,15 +117,19 @@ Format Requirements:
       "id": "1",
       "question": "What is...",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Option A",  // MUST be exactly one of the options above
+      "correctAnswer": "Option A",
       "explanation": "This is correct because...",
-      "difficulty": "${difficulty}"
+      "difficulty": "easy|medium|hard"
     }
   ],
   "metadata": {
     "title": "Quiz Title",
-    "description": "Quiz Description",
-    "difficulty": "${difficulty}",
+    "description": "Quiz Description", 
+    "difficultyDistribution": {
+      "easy": ${distribution.easy},
+      "medium": ${distribution.medium}, 
+      "hard": ${distribution.hard}
+    },
     "numberOfQuestions": ${numberOfQuestions}
   }
 }
@@ -144,13 +190,21 @@ IMPORTANT: Double-check that each correctAnswer exactly matches one of its optio
                   properties: {
                     title: { type: "string" },
                     description: { type: "string" },
-                    difficulty: { type: "string" },
+                    difficultyDistribution: {
+                      type: "object",
+                      properties: {
+                        easy: { type: "number" },
+                        medium: { type: "number" },
+                        hard: { type: "number" },
+                      },
+                      required: ["easy", "medium", "hard"],
+                    },
                     numberOfQuestions: { type: "number" },
                   },
                   required: [
-                    "title",
+                    "title", 
                     "description",
-                    "difficulty",
+                    "difficultyDistribution",
                     "numberOfQuestions",
                   ],
                 },

@@ -42,12 +42,21 @@ export class QuizController {
         },
         difficulty: {
           type: "string",
-          description: "Difficulty level (easy, medium, hard)",
+          description: "Difficulty level (easy, medium, hard) - DEPRECATED, use difficultyDistribution",
           enum: [
             QuizDifficulty.EASY,
             QuizDifficulty.MEDIUM,
             QuizDifficulty.HARD,
           ],
+        },
+        difficultyDistribution: {
+          type: "object",
+          description: "Difficulty distribution in percentages",
+          properties: {
+            easy: { type: "number", minimum: 0, maximum: 100 },
+            medium: { type: "number", minimum: 0, maximum: 100 },
+            hard: { type: "number", minimum: 0, maximum: 100 },
+          },
         },
         additionalInstructions: {
           type: "string",
@@ -73,6 +82,11 @@ export class QuizController {
       documentText: string;
       numberOfQuestions?: number;
       difficulty?: string;
+      difficultyDistribution?: {
+        easy: number;
+        medium: number;
+        hard: number;
+      };
       additionalInstructions?: string;
       provider?: string;
       model?: string;
@@ -85,22 +99,35 @@ export class QuizController {
 
     // Validate and sanitize input
     const numberOfQuestions = body.numberOfQuestions
-      ? Math.min(Math.max(1, body.numberOfQuestions), 20) // Limit between 1 and 20
-      : 5;
+      ? Math.min(Math.max(10, body.numberOfQuestions), 100) // Updated to match frontend limits
+      : 10;
 
-    const difficulty = body.difficulty?.toLowerCase() as QuizDifficulty;
+    let difficultyDistribution = body.difficultyDistribution;
+    let difficulty = body.difficulty?.toLowerCase() as QuizDifficulty;
 
-    if (
-      difficulty &&
-      ![
-        QuizDifficulty.EASY,
-        QuizDifficulty.MEDIUM,
-        QuizDifficulty.HARD,
-      ].includes(difficulty)
-    ) {
-      throw new BadRequestException(
-        "Difficulty must be one of: easy, medium, hard"
-      );
+    // Handle backward compatibility with single difficulty or use distribution
+    if (difficultyDistribution) {
+      // Validate difficulty distribution
+      const total = difficultyDistribution.easy + difficultyDistribution.medium + difficultyDistribution.hard;
+      if (Math.abs(total - 100) > 1) { // Allow 1% tolerance for rounding
+        throw new BadRequestException("Difficulty distribution must total 100%");
+      }
+      if (difficultyDistribution.easy < 0 || difficultyDistribution.medium < 0 || difficultyDistribution.hard < 0) {
+        throw new BadRequestException("Difficulty percentages must be non-negative");
+      }
+    } else if (difficulty) {
+      // Convert single difficulty to distribution for backward compatibility
+      if (![QuizDifficulty.EASY, QuizDifficulty.MEDIUM, QuizDifficulty.HARD].includes(difficulty)) {
+        throw new BadRequestException("Difficulty must be one of: easy, medium, hard");
+      }
+      difficultyDistribution = {
+        easy: difficulty === QuizDifficulty.EASY ? 100 : 0,
+        medium: difficulty === QuizDifficulty.MEDIUM ? 100 : 0,
+        hard: difficulty === QuizDifficulty.HARD ? 100 : 0,
+      };
+    } else {
+      // Default distribution
+      difficultyDistribution = { easy: 40, medium: 30, hard: 30 };
     }
 
     // Validate provider if specified
@@ -117,7 +144,7 @@ export class QuizController {
       return await this.quizService.generateQuiz(
         body.documentText,
         numberOfQuestions,
-        difficulty || QuizDifficulty.MEDIUM,
+        difficultyDistribution,
         body.additionalInstructions || "",
         body.provider as LlmProviderType,
         body.model

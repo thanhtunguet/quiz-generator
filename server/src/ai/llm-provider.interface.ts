@@ -22,7 +22,7 @@ export interface LlmProvider {
    * Generate quiz questions from the provided text content
    * @param content The text content to base the quiz on
    * @param numberOfQuestions Number of questions to generate
-   * @param difficulty Difficulty level of the questions
+   * @param difficultyDistribution Difficulty distribution for the questions or single difficulty for backward compatibility
    * @param additionalInstructions Optional additional instructions for quiz generation
    * @param options Optional provider-specific options
    * @returns Promise resolving to an array of quiz questions in JSON format
@@ -30,7 +30,7 @@ export interface LlmProvider {
   generateQuiz(
     content: string,
     numberOfQuestions: number,
-    difficulty?: string,
+    difficultyDistribution?: { easy: number; medium: number; hard: number } | string,
     additionalInstructions?: string,
     options?: LlmProviderOptions
   ): Promise<any>;

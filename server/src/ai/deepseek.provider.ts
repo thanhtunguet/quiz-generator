@@ -37,8 +37,8 @@ export class DeepseekProvider implements LlmProvider {
 
   async generateQuiz(
     content: string,
-    numberOfQuestions: number = 5,
-    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
+    numberOfQuestions: number = 10,
+    difficultyDistribution?: { easy: number; medium: number; hard: number } | string,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<QuizQuestion[]> {
@@ -54,10 +54,16 @@ export class DeepseekProvider implements LlmProvider {
         : content;
 
     const model = options?.model || this.defaultModel;
+    
+    // Handle difficulty distribution (simplified for now)
+    let difficultyText = "mixed difficulty";
+    if (typeof difficultyDistribution === 'string') {
+      difficultyText = difficultyDistribution;
+    }
 
     const prompt = `You are an expert quiz creator who creates high-quality multiple-choice questions based on provided content.
             
-Generate ${numberOfQuestions} ${difficulty}-level multiple-choice questions based on the provided text content.
+Generate ${numberOfQuestions} ${difficultyText}-level multiple-choice questions based on the provided text content.
 
 CRITICAL REQUIREMENTS:
 1. Each question must have EXACTLY 4 options (A, B, C, D)
@@ -74,15 +80,15 @@ Return a valid JSON string with the following structure (DO NOT use markdown cod
       "id": "1",
       "question": "What is...",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Option A",  // MUST be exactly one of the options above
+      "correctAnswer": "Option A",
       "explanation": "This is correct because...",
-      "difficulty": "${difficulty}"
+      "difficulty": "${difficultyText}"
     }
   ],
   "metadata": {
     "title": "Quiz Title",
     "description": "Quiz Description",
-    "difficulty": "${difficulty}",
+    "difficulty": "${difficultyText}",
     "numberOfQuestions": ${numberOfQuestions}
   }
 }

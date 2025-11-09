@@ -36,8 +36,8 @@ export class AnthropicProvider implements LlmProvider {
 
   async generateQuiz(
     content: string,
-    numberOfQuestions: number = 5,
-    difficulty: QuizDifficulty = QuizDifficulty.MEDIUM,
+    numberOfQuestions: number = 10,
+    difficultyDistribution?: { easy: number; medium: number; hard: number } | string,
     additionalInstructions: string = "",
     options?: LlmProviderOptions
   ): Promise<any> {
@@ -51,6 +51,12 @@ export class AnthropicProvider implements LlmProvider {
         ? content.substring(0, 20000) + "...(truncated)"
         : content;
 
+    // Handle difficulty distribution (simplified for now)
+    let difficultyText = "mixed difficulty";
+    if (typeof difficultyDistribution === 'string') {
+      difficultyText = difficultyDistribution;
+    }
+
     try {
       const systemPrompt = `You are an expert quiz creator who creates high-quality multiple-choice questions based on provided content.
 You MUST return your response in valid JSON format with the following structure:
@@ -60,7 +66,7 @@ You MUST return your response in valid JSON format with the following structure:
       "id": "1",
       "question": "What is...",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Option A",  // MUST be exactly one of the options above
+      "correctAnswer": "Option A",
       "explanation": "This is correct because...",
       "difficulty": "medium"
     }
@@ -81,7 +87,7 @@ CRITICAL REQUIREMENTS:
 5. Return ONLY the JSON object, no other text or explanation
 6. Validate that each correctAnswer exactly matches one of its options before returning`;
 
-      const userPrompt = `Generate ${numberOfQuestions} ${difficulty}-level multiple-choice questions based on the provided text content.
+      const userPrompt = `Generate ${numberOfQuestions} ${difficultyText}-level multiple-choice questions based on the provided text content.
 
 ${additionalInstructions}
 
