@@ -4,7 +4,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as mammoth from "mammoth";
 import * as path from "path";
-import * as pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse";
 import { promisify } from "util";
 import { UploadResponse } from "../models/upload-response.interface";
 import { extractTextFromFile } from "../utils/file-extractor";

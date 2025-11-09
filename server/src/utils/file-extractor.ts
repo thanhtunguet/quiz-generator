@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as mammoth from "mammoth";
-import * as pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse";
 
 export async function extractTextFromFile(filePath: string): Promise<string> {
   const fileExtension = filePath.split(".").pop()?.toLowerCase();
