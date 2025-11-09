@@ -1,6 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import * as cors from "cors";
+import cors from "cors";
 import { ConfigService } from "@nestjs/config";
 import * as path from "path";
 import * as fs from "fs";

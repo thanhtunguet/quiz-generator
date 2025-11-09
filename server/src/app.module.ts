@@ -10,6 +10,7 @@ import { OpenAIProvider } from "./ai/openai.provider";
 import { AnthropicProvider } from "./ai/anthropic.provider";
 import { GeminiProvider } from "./ai/gemini.provider";
 import { LlmProviderFactory } from "./ai/llm-provider.factory";
+import { GrokProvider } from "./ai/grok.provider";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LlmProviderFactory } from "./ai/llm-provider.factory";
     AnthropicProvider,
     GeminiProvider,
     DeepseekProvider,
+    GrokProvider,
     LlmProviderFactory,
   ],
 })

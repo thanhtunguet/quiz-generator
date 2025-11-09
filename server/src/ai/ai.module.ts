@@ -6,6 +6,7 @@ import { GeminiProvider } from "./gemini.provider";
 import { AnthropicProvider } from "./anthropic.provider";
 import { LlmProviderFactory } from "./llm-provider.factory";
 import { DeepseekProvider } from "./deepseek.provider";
+import { GrokProvider } from "./grok.provider";
 
 @Module({
   imports: [ConfigModule],
@@ -15,6 +16,7 @@ import { DeepseekProvider } from "./deepseek.provider";
     GeminiProvider,
     AnthropicProvider,
     DeepseekProvider,
+    GrokProvider,
     LlmProviderFactory,
   ],
   exports: [AiService],
