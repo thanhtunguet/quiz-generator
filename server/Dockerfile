@@ -1,28 +1,32 @@
+# Build stage - Use Node.js to build the application
 FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install all dependencies (including devDependencies)
 COPY package.json ./
 RUN npm install
 
-# Copy source code
+# Copy source code and build
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Production stage
+# Production stage - Fresh Node.js alpine image with only production dependencies
 FROM node:18-alpine AS production
 
 WORKDIR /app
 
-# Copy package files for production dependencies
+# Copy package.json and install only production dependencies
 COPY package.json ./
 RUN npm install --only=production && npm cache clean --force
 
-# Copy built application
+# Copy built application from build stage
 COPY --from=build /app/dist ./dist
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nestjs -u 1001
+USER nestjs
 
 EXPOSE 3000
 
